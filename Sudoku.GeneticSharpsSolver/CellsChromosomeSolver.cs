@@ -13,12 +13,59 @@ namespace Sudoku.GeneticSharpsSolver
     {
         public GridSudoku Solve(GridSudoku s)
         {
-
+            GridSudoku toReturn = s;
             var populationSize = 500;
+            do
+            {
+                var fitnessThreshold = 0;
+                var generationNb = 50;
+
+                var sudokuChromosome = new SudokuCellsChromosome(s);
+                var fitness = new SudokuFitness(s);
+                var selection = new EliteSelection();
+                var crossover = new UniformCrossover();
+                var mutation = new UniformMutation();
+
+                var population = new Population(populationSize, populationSize, sudokuChromosome);
+                var ga = new GeneticAlgorithm(population, fitness, selection, crossover, mutation)
+                {
+                    Termination = new OrTermination(new ITermination[]
+                    {
+                    new FitnessThresholdTermination(fitnessThreshold),
+                    new GenerationNumberTermination(generationNb)
+                    })
+                };
+
+                ga.Start();
+
+                var bestIndividual = ((ISudokuChromosome)ga.Population.BestChromosome);
+                var solutions = bestIndividual.GetSudokus();
+                if (solutions.Count > 0)
+                {
+                    toReturn = solutions.First();
+                    if (toReturn.NbErrors(s)==0)
+                    {
+                        break;
+                    }
+                }
+                populationSize *= 5;
+            } while (true);
+            
+
+            return toReturn;
+        }
+    }
+
+    public class PermutationsChromosomeSolver : ISolverSudoku
+    {
+        public GridSudoku Solve(GridSudoku s)
+        {
+
+            var populationSize = 1000;
             var fitnessThreshold = 0;
             var generationNb = 50;
 
-            var sudokuChromosome = new SudokuCellsChromosome(s);
+            var sudokuChromosome = new SudokuPermutationsChromosome(s);
             var fitness = new SudokuFitness(s);
             var selection = new EliteSelection();
             var crossover = new UniformCrossover();
@@ -38,7 +85,7 @@ namespace Sudoku.GeneticSharpsSolver
 
             var bestIndividual = ((ISudokuChromosome)ga.Population.BestChromosome);
             var solutions = bestIndividual.GetSudokus();
-            if (solutions.Count>0)
+            if (solutions.Count > 0)
             {
                 return solutions.First();
             }
@@ -47,16 +94,16 @@ namespace Sudoku.GeneticSharpsSolver
         }
     }
 
-    public class PermutationsChromosome : ISolverSudoku
+    public class RandomPermutationChromosomeSolver : ISolverSudoku
     {
         public GridSudoku Solve(GridSudoku s)
         {
 
-            var populationSize = 500;
+            var populationSize = 1000;
             var fitnessThreshold = 0;
             var generationNb = 50;
 
-            var sudokuChromosome = new SudokuPermutationsChromosome(s);
+            var sudokuChromosome = new SudokuRandomPermutationsChromosome(s, 10, 1);
             var fitness = new SudokuFitness(s);
             var selection = new EliteSelection();
             var crossover = new UniformCrossover();
